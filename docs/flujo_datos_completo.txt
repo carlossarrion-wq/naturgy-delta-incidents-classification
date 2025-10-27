@@ -1,0 +1,641 @@
+================================================================================
+📊 FLUJO DE DATOS COMPLETO - SISTEMA CLASIFICADOR DE INCIDENCIAS NATURGY DELTA
+================================================================================
+
+Fecha de documentación: 27/10/2025
+Versión del sistema: Refactorizada
+Autor: Sistema de análisis automático
+
+================================================================================
+🎯 RESUMEN EJECUTIVO
+================================================================================
+
+Este documento describe de manera exhaustiva el flujo completo de datos en el 
+Sistema Clasificador de Incidencias Naturgy Delta, desde la entrada de datos 
+hasta la generación de reportes finales. El sistema procesa incidencias técnicas 
+y las clasifica automáticamente en categorías semánticamente coherentes.
+
+COMPONENTES PRINCIPALES:
+- Preprocesador de texto (TextPreprocessor)
+- Extractor de entidades (EntityExtractor)
+- Motor de clustering (IncidentClusterer)
+- Clasificador predictivo (PredictiveClassifier)
+- Motor de nomenclatura (CategoryNamingEngine)
+- Gestor de salidas (OutputManager)
+
+================================================================================
+📋 FLUJO DE DATOS DETALLADO - PASO A PASO
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 1: ENTRADA Y CARGA DE DATOS                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 1.1: Carga del archivo de datos
+   • ENTRADA: Archivo Excel (infomation.xlsx)
+   • UBICACIÓN: Directorio raíz del proyecto (/Users/samuel/Desktop/Clasificador V1)
+   • FORMATO: Excel (.xlsx) con múltiples columnas
+   • COLUMNAS PRINCIPALES:
+     - Ticket ID: Identificador único de la incidencia
+     - Resumen: Descripción principal del problema
+     - Notas: Información adicional técnica
+     - Tipo de ticket: Clasificación original (INCIDENCIA, PETICION, CONSULTA)
+     - Resolución: Descripción de la solución aplicada
+     - Otras columnas: Información complementaria disponible
+   
+   • MÉTODO: pd.read_excel(data_path)
+   • SALIDA: DataFrame de pandas con todos los registros
+
+🔸 PASO 1.2: Validación y filtrado inicial
+   • ENTRADA: DataFrame completo
+   • PROCESO: 
+     - Verificación de columnas requeridas
+     - Eliminación de registros con campos vacíos críticos
+     - Validación de integridad de datos
+   • CRITERIOS DE FILTRADO:
+     - Resumen no puede estar vacío
+     - Ticket ID debe existir
+     - Al menos una columna de texto adicional presente
+   • SALIDA: DataFrame limpio y validado
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 2: PREPROCESAMIENTO DE TEXTO                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 2.1: Combinación de campos de texto
+   • ENTRADA: DataFrame validado
+   • PROCESO: Clase TextPreprocessor._combine_text_columns()
+   • CAMPOS COMBINADOS:
+     - Resumen (peso principal)
+     - Notas (información técnica)
+     - Tipo de ticket
+     - Resolución
+     - Otros campos de texto disponibles
+   • MÉTODO: Concatenación con espacios separadores
+   • SALIDA: Serie de pandas 'combined_text'
+
+🔸 PASO 2.2: Limpieza y normalización de texto
+   • ENTRADA: combined_text
+   • PROCESO: TextPreprocessor._process_text()
+   • OPERACIONES:
+     1. Conversión a minúsculas
+     2. Eliminación de caracteres especiales
+     3. Normalización de espacios múltiples
+     4. Eliminación de stop words específicas:
+        - Saludos: "buenos días", "cordial saludo"
+        - Cortesías: "gracias", "un saludo", "favor"
+        - Administrativo: "adjunto", "envío", "estimado"
+     5. Aplicación de sinonimias:
+        - fallo → error
+        - incidencia → error
+        - problema → error
+        - cancelación → baja
+        - activación → alta
+        - cambiar → modificar
+   • SALIDA: Serie 'processed_text' limpia y normalizada
+
+🔸 PASO 2.3: Extracción de entidades específicas
+   • ENTRADA: combined_text
+   • PROCESO: EntityExtractor.extract_entities()
+   • PATRONES DE EXTRACCIÓN:
+     - CUPS: 'ES\d{4}\d{4}\d{4}\d{4}[A-Z]{2}\d[A-Z]'
+     - Solicitudes: 'R\d{2}-\d+', 'REQ\d+', 'OFL\d+'
+     - Fechas: '\d{1,2}[/-]\d{1,2}[/-]\d{2,4}'
+     - Productos: 'bono social', 'cuidahogar', 'rl1', 'tur vulnerable'
+     - Estados: 'activo', 'inactivo', 'pendiente', 'bloqueado'
+   • SALIDA: Diccionario de entidades por registro
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 3: VECTORIZACIÓN Y ANÁLISIS SEMÁNTICO                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 3.1: Vectorización TF-IDF
+   • ENTRADA: processed_text (textos limpios)
+   • PROCESO: TfidfVectorizer de sklearn
+   • PARÁMETROS:
+     - max_features: 8000 (máximo vocabulario)
+     - min_df: 3 (palabra debe aparecer al menos 3 veces)
+     - max_df: 0.7 (palabra no debe aparecer en más del 70% documentos)
+     - ngram_range: (1, 2) (palabras individuales y bigramas)
+     - stop_words: None (ya filtradas en preproceso)
+   • PROCESO INTERNO:
+     1. Construcción del vocabulario
+     2. Cálculo de frecuencias de términos (TF)
+     3. Cálculo de frecuencia inversa de documentos (IDF)
+     4. Multiplicación TF × IDF
+   • SALIDA: Matriz esparsa X de dimensiones [n_registros, 8000]
+
+🔸 PASO 3.2: Análisis de clustering inicial
+   • ENTRADA: Matriz TF-IDF X
+   • PROCESO: IncidentClusterer._find_optimal_clusters()
+   • DETERMINACIÓN DEL NÚMERO DE CLUSTERS:
+     - Cálculo basado en tamaño del dataset:
+       * >3000 registros → máximo 25 clusters
+       * >1000 registros → máximo 15 clusters  
+       * <1000 registros → máximo 10 clusters
+     - Mínimo de registros por cluster: 20
+   • EVALUACIÓN DE CALIDAD:
+     - Cálculo de inercia para diferentes valores de k
+     - Cálculo de silhouette score
+     - Selección óptima balanceando coherencia y diversidad
+   • SALIDA: Número óptimo de clusters (k_optimal)
+
+🔸 PASO 3.3: Ejecución del clustering
+   • ENTRADA: Matriz X, k_optimal
+   • PROCESO: KMeans clustering
+   • PARÁMETROS:
+     - n_clusters: k_optimal
+     - random_state: 42 (reproducibilidad)
+     - n_init: 10 (múltiples inicializaciones)
+     - max_iter: 300 (máximo iteraciones)
+   • PROCESO INTERNO:
+     1. Inicialización aleatoria de centroides
+     2. Asignación de puntos al centroide más cercano
+     3. Recálculo de centroides
+     4. Iteración hasta convergencia
+   • SALIDA: Array de etiquetas cluster_labels
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 4: ANÁLISIS Y GENERACIÓN DE CATEGORÍAS                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 4.1: Análisis de clusters individuales
+   • ENTRADA: DataFrame, textos procesados, cluster_labels
+   • PROCESO: Para cada cluster_id único:
+   
+   4.1.1 Extracción de palabras clave distintivas:
+   • MÉTODO: _extract_distinctive_keywords()
+   • PROCESO:
+     - Tokenización del texto combinado del cluster
+     - Filtrado de stop words expandidas (80+ palabras)
+     - Conteo de frecuencias de palabras significativas
+     - Selección de top 15 palabras más distintivas
+   
+   4.1.2 Análisis de patrones de contenido:
+   • ENTRADA: Texto procesado del cluster
+   • PROCESO: Identificación de patrones técnicos y funcionales
+   • SALIDA: Patrones más frecuentes identificados automáticamente
+   
+   4.1.3 Análisis de tipos de ticket:
+   • ENTRADA: Campo 'Tipo de ticket'
+   • PROCESO: Distribución de INCIDENCIA/PETICION/CONSULTA
+   • SALIDA: Tipos principales por frecuencia
+
+🔸 PASO 4.2: Generación de nomenclatura semántica
+   • ENTRADA: Información del cluster (palabras clave, patrones, contexto)
+   • PROCESO: CategoryNamingEngine.generate_semantic_name()
+   • PATRONES TÉCNICOS IDENTIFICADOS:
+     1. Infraestructura: servidor, red, conexión, servicio
+     2. Datos: carga, actualización, masiva, información
+     3. Comunicación: correo, mensaje, notificación, envío
+     4. Procesos: batch, job, automático, programado
+     5. Consultas: búsqueda, listado, extracción, reporte
+     6. Errores: fallo, excepción, timeout, crash
+     7. Facturación: factura, cobro, pago, recibo
+     8. Contratos: alta, baja, modificación, gestión
+   
+   • MODIFICADORES DE CONTEXTO:
+     - Crítico: urgente, bloqueante, alto
+     - Masivo: múltiple, lote, bulk
+     - Automático: batch, programado, scheduled
+     - Manual: individual, específico, puntual
+   
+   • ALGORITMO DE NOMENCLATURA:
+     1. Identificar patrón técnico principal (scoring por keywords)
+     2. Identificar modificador de contexto
+     3. Generar nombre base semánticamente coherente
+     4. Aplicar modificadores y especificadores
+     5. Validar unicidad y legibilidad
+
+🔸 PASO 4.3: Generación de descripciones técnicas
+   • ENTRADA: Cluster analisado + nombre semántico
+   • PROCESO: _generate_enhanced_description()
+   • ELEMENTOS DE LA DESCRIPCIÓN:
+     1. Contexto numérico: número de incidencias
+     2. Contexto funcional: basado en nombre semántico
+     3. Patrones técnicos: análisis de palabras clave distintivas
+     4. Características específicas: análisis de contenido del texto
+   • EJEMPLO REAL:
+     "Categoría 'Errores Sistema Critico Frecuentes' que agrupa 1089 
+     incidencias relacionadas con fallos técnicos, excepciones y errores 
+     del sistema. Términos técnicos frecuentes: atlas, error, delta, cups."
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 5: CLASIFICACIÓN PREDICTIVA Y ENTRENAMIENTO                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 5.1: Preparación de datos para ML
+   • ENTRADA: DataFrame procesado, cluster_labels
+   • PROCESO: PredictiveClassifier.train_model()
+   • PREPARACIÓN DE FEATURES:
+     - Reutilización de matriz TF-IDF como features (X)
+     - Uso de cluster_labels como target (y)
+     - Codificación de etiquetas con LabelEncoder
+   • DIVISIÓN DE DATOS:
+     - 80% entrenamiento, 20% prueba
+     - Estratificación por cluster para balance
+     - random_state=42 para reproducibilidad
+
+🔸 PASO 5.2: Entrenamiento del modelo predictivo
+   • ENTRADA: X_train, y_train
+   • ALGORITMO: RandomForestClassifier
+   • PARÁMETROS:
+     - n_estimators: 100 (árboles en el bosque)
+     - random_state: 42
+     - n_jobs: -1 (paralelización)
+   • PROCESO DE ENTRENAMIENTO:
+     1. Construcción de 100 árboles de decisión
+     2. Entrenamiento con muestras bootstrap
+     3. Selección aleatoria de features por nodo
+     4. Agregación de predicciones por votación
+   • MÉTRICAS CALCULADAS:
+     - Accuracy en entrenamiento
+     - Accuracy en prueba  
+     - Cross-validation score (5-fold)
+
+🔸 PASO 5.3: Sistema de reglas semánticas específicas
+   • ENTRADA: Texto de nueva incidencia
+   • PROCESO: _apply_semantic_rules()
+   • DICCIONARIO DE REGLAS (20 CATEGORÍAS ESPECÍFICAS):
+   
+   1. Gestión de CUPS:
+      - Keywords: "alta cups", "baja cups", "activar cups", "cups"
+      - Confianza: 0.70-0.95 según coincidencias
+   
+   2. Montaje/Desmontaje/Equipos:
+      - Keywords: "montaje", "desmontaje", "aparato", "equipo de lectura"
+      - Criticidad: Alta
+   
+   3. Errores de cálculo/facturación:
+      - Keywords: "error al calcular", "tipdet", "passthrough", "java.lang.nullpointerexception"
+      - Criticidad: Alta
+   
+   4. Estados de cálculo/facturación:
+      - Keywords: "no calculable", "calculable", "bloqueado", "desbloquear"
+      - Criticidad: Media
+   
+   5. Lecturas y mediciones:
+      - Keywords: "lectura", "medición", "nm3", "pcs", "solape"
+      - Criticidad: Media
+   
+   6. Datos de cliente y contratos:
+      - Keywords: "dirección", "titular", "nif", "email", "teléfono"
+      - Criticidad: Media
+   
+   7. Cambio de titularidad:
+      - Keywords: "cambio titular", "subrogación"
+      - Criticidad: Media
+   
+   8. Ofertas y contratación:
+      - Keywords: "oferta", "validar oferta", "firmar oferta", "contratación"
+      - Criticidad: Media
+   
+   9. Tarifas y productos:
+      - Keywords: "tarifa", "producto", "cuida básico", "mantenimiento"
+      - Criticidad: Media
+   
+   10. Bono social:
+       - Keywords: "bono social", "vulnerable", "renovación bono"
+       - Criticidad: Media
+   
+   [... 10 categorías adicionales con patrones específicos]
+   
+   • ALGORITMO DE MATCHING:
+     1. Scoring por coincidencias de keywords
+     2. Cálculo de confianza basado en número de matches
+     3. Selección de categoría con mayor score
+     4. Retorno de clasificación con metadatos completos
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 6: GENERACIÓN DE SALIDAS Y REPORTES                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 6.1: Estructuración de resultados
+   • ENTRADA: Categorías generadas, métricas del modelo
+   • PROCESO: _save_results_organized()
+   • ESTRUCTURA DE CARPETAS CREADA:
+     
+     outputs/
+     ├── models/
+     │   └── naturgy_model_YYYYMMDD_HHMMSS.pkl
+     ├── data/
+     │   └── analisis_completo_naturgy.json
+     ├── reports/
+     │   ├── reporte_analisis_naturgy.txt
+     │   └── resumen_ejecutivo.txt
+     └── logs/
+         └── (archivos de registro)
+
+🔸 PASO 6.2: Generación del modelo serializado
+   • ENTRADA: Todos los componentes entrenados
+   • CONTENIDO DEL MODELO (.pkl):
+     - Preprocesador configurado
+     - Clusterer con centroides
+     - Clasificador entrenado
+     - Extractor de entidades
+     - Tipos de incidencia definidos
+     - Configuración del sistema
+     - Timestamp de creación
+   • MÉTODO: pickle.dump()
+   • TAMAÑO TÍPICO: ~50-100 MB
+
+🔸 PASO 6.3: Generación de análisis JSON completo
+   • ARCHIVO: analisis_completo_naturgy.json
+   • ESTRUCTURA:
+     
+     {
+       "metadata": {
+         "fecha_analisis": "2025-10-24T14:11:25.815338",
+         "total_categorias": 17,
+         "metodo_clustering": "KMeans",
+         "metodo_clasificacion": "random_forest"
+       },
+       "tipos_de_incidencia": {
+         "categoria_key": {
+           "nombre": "Nombre Semántico",
+           "descripcion": "Descripción técnica detallada",
+           "num_incidencias": 123,
+           "palabras_clave": ["palabra1", "palabra2", ...],
+           "tipos_principales": ["INCIDENCIA", "PETICION"],
+           "ejemplos": [
+             {
+               "id": "INC000014898139",
+               "resumen": "Texto del resumen...",
+               "tipo_ticket": "INCIDENCIA"
+             }
+           ],
+           "patrones_identificados": ["Patrón1", "Patrón2"],
+           "nivel_criticidad": "Alta|Media|Baja"
+         }
+       },
+       "metricas_modelo": {
+         "silhouette_score": 0.0865,
+         "model_accuracy": 0.9259,
+         "model_cv_score": 0.9259,
+         "num_clusters": 25,
+         "coverage": 1.0
+       },
+       "cluster_info": {
+         "num_clusters": 25,
+         "silhouette_score": 0.0865,
+         "cluster_sizes": { "16": 1089, "1": 408, ... }
+       }
+     }
+
+🔸 PASO 6.4: Generación de reportes legibles
+   • REPORTE COMPLETO (reporte_analisis_naturgy.txt):
+     - Cabecera con metadatos del análisis
+     - Estadísticas generales del modelo
+     - Listado detallado de todas las categorías:
+       * Nombre y descripción
+       * Número de incidencias y criticidad
+       * Palabras clave y patrones identificados
+       * Ejemplos representativos con IDs reales
+     - Formato: 80 caracteres de ancho, secciones delimitadas
+   
+   • RESUMEN EJECUTIVO (resumen_ejecutivo.txt):
+     - Resultados clave en formato ejecutivo
+     - Top 5 categorías por volumen
+     - Estadísticas de criticidad
+     - Recomendaciones operativas:
+       * Priorizar categorías de alta criticidad
+       * Implementar automatización en categorías frecuentes
+       * Desarrollar procedimientos específicos
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FASE 7: CLASIFICACIÓN DE NUEVAS INCIDENCIAS                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+🔸 PASO 7.1: Flujo de clasificación en tiempo real
+   • ENTRADA: Texto de nueva incidencia + campos opcionales
+   • PROCESO: classify_incident()
+   • FLUJO COMPLETO:
+   
+   1. Aplicación de reglas semánticas (pre-clasificación):
+      • Búsqueda en diccionario de 20 categorías específicas
+      • Scoring por coincidencias de keywords
+      • Retorno inmediato si confianza > umbral
+   
+   2. Si no hay match en reglas semánticas:
+      • Creación de DataFrame temporal
+      • Aplicación de preprocesamiento completo
+      • Extracción de entidades
+      • Vectorización con TF-IDF entrenado
+      • Predicción con RandomForest
+      • Cálculo de confianza con predict_proba
+   
+   3. Enriquecimiento de resultado:
+      • Mapeo a información de categoría
+      • Extracción de metadatos
+      • Generación de explicación
+
+🔸 PASO 7.2: Sistema de casos de prueba
+   • ARCHIVO: test_classifier.py
+   • PROCESO: TestCaseGenerator.run_complete_test()
+   • FLUJO COMPLETO:
+   
+   1. Separación de datos:
+      • Selección aleatoria de 100 casos para prueba
+      • Resto de datos para entrenamiento
+      • Guardado de casos de prueba originales
+   
+   2. Entrenamiento independiente:
+      • Creación de clasificador nuevo
+      • Entrenamiento solo con datos no-prueba
+      • Validación de entrenamiento exitoso
+   
+   3. Clasificación de casos de prueba:
+      • Iteración sobre cada caso de prueba
+      • Aplicación del flujo completo de clasificación
+      • Captura de errores y handling robusto
+   
+   4. Generación de reportes de prueba:
+      • Estadísticas de confianza
+      • Distribución por categorías predichas
+      • Detalle caso por caso con metadatos
+      • Guardado en JSON y texto plano
+
+================================================================================
+📊 MÉTRICAS Y RENDIMIENTO DEL SISTEMA
+================================================================================
+
+🔸 MÉTRICAS DE CLUSTERING:
+   • Silhouette Score: 0.0865 (rango: -1 a 1, >0 indica clustering válido)
+   • Número de clusters: 25 (de máximo 50 configurado)
+   • Distribución de tamaños: 
+     - Cluster más grande: 1089 incidencias
+     - Cluster más pequeño: 23 incidencias
+     - Promedio: ~120 incidencias por cluster
+
+🔸 MÉTRICAS DEL MODELO PREDICTIVO:
+   • Accuracy: 92.59% (excelente para clasificación multiclase)
+   • Cross-validation Score: 92.59% (consistencia en validación cruzada)
+   • Cobertura: 100% (todos los casos clasificados)
+
+🔸 DISTRIBUCIÓN DE CATEGORÍAS POR VOLUMEN:
+   1. Errores Sistema Critico Frecuentes: 1089 incidencias (36.3%)
+   2. Gestión Contratos Automatico Frecuentes: 184 incidencias (6.1%)
+   3. Facturación Critico Frecuentes: 264 incidencias (8.8%)
+   4. Errores Sistema Automatico Frecuentes: 196 incidencias (6.5%)
+   5. Gestión Datos Automatico Frecuentes: 118 incidencias (3.9%)
+   [... resto de categorías basadas en análisis de texto ...]
+
+🔸 DISTRIBUCIÓN POR CRITICIDAD:
+   • Alta criticidad: 4 categorías (~45% de incidencias)
+   • Media criticidad: 8 categorías (~35% de incidencias)  
+   • Baja criticidad: 5 categorías (~20% de incidencias)
+
+================================================================================
+🔧 CONFIGURACIÓN TÉCNICA DEL SISTEMA
+================================================================================
+
+🔸 PARÁMETROS PRINCIPALES:
+   • max_clusters: 50 (máximo clusters permitidos)
+   • min_cluster_size: 20 (mínimo incidencias por cluster)
+   • tfidf_max_features: 8000 (vocabulario máximo)
+   • tfidf_min_df: 3 (frecuencia mínima de palabra)
+   • tfidf_max_df: 0.7 (frecuencia máxima de palabra)
+   • random_state: 42 (semilla para reproducibilidad)
+
+🔸 ALGORITMOS UTILIZADOS:
+   • Clustering: KMeans con inicialización k-means++
+   • Clasificación: RandomForest con 100 estimadores
+   • Vectorización: TF-IDF con n-gramas (1,2)
+   • Validación: 5-fold cross-validation
+
+🔸 RECURSOS COMPUTACIONALES:
+   • Memoria requerida: ~2-4 GB RAM para datasets grandes
+   • Tiempo de entrenamiento: 5-15 minutos según tamaño
+   • Tiempo de clasificación: <1 segundo por incidencia
+   • Espacio en disco: ~100-200 MB para modelo completo
+
+================================================================================
+📁 ESTRUCTURA DE ARCHIVOS GENERADOS
+================================================================================
+
+Clasificador V1/
+├── src/                                    # Código fuente
+│   ├── naturgy_classifier_refactored.py   # Clasificador principal
+│   ├── semantic_analyzer_refactored.py    # Analizador semántico
+│   └── test_classifier.py                 # Script de pruebas
+├── docs/                                   # Documentación
+│   ├── flujo_datos_completo.txt           # Este documento
+│   ├── explicacion_centroides_naturgy.txt # Explicación técnica
+│   └── resumen_ejecutivo_proyecto_naturgy.txt # Resumen del proyecto
+├── sistema_final_naturgy/                  # Salidas del sistema
+│   ├── data/
+│   │   ├── analisis_completo_naturgy.json # Análisis completo
+│   │   ├── casos_prueba_original.xlsx     # Casos de prueba
+│   │   └── casos_prueba_resultados.json   # Resultados de pruebas
+│   ├── models/
+│   │   └── naturgy_model_YYYYMMDD_HHMMSS.pkl # Modelo entrenado
+│   ├── reports/
+│   │   ├── casos_prueba_detallado.txt     # Reporte detallado de pruebas
+│   │   ├── reporte_analisis_naturgy.txt   # Reporte completo
+│   │   └── resumen_ejecutivo.txt          # Resumen para directivos
+│   └── logs/                              # Archivos de registro
+├── infomation.xlsx                         # Datos de entrada
+└── README.md                              # Documentación del proyecto
+
+================================================================================
+🚀 CASOS DE USO Y APLICACIÓN PRÁCTICA
+================================================================================
+
+🔸 CASO DE USO 1: Clasificación automática en tiempo real
+   • INPUT: Nueva incidencia de usuario
+   • PROCESO: 
+     1. Aplicación de reglas semánticas (< 100ms)
+     2. Si no hay match, clasificación ML (< 1s)
+     3. Retorno de categoría + confianza + metadatos
+   • OUTPUT: Categoría asignada con explicación
+
+🔸 CASO DE USO 2: Análisis de tendencias históricas
+   • INPUT: Dataset histórico de incidencias
+   • PROCESO: Entrenamiento completo del pipeline
+   • OUTPUT: 
+     - Categorías semánticamente coherentes
+     - Métricas de calidad
+     - Reportes ejecutivos y técnicos
+
+🔸 CASO DE USO 3: Validación y testing del sistema
+   • INPUT: Dataset con casos de prueba separados
+   • PROCESO: Entrenamiento + clasificación de casos prueba
+   • OUTPUT: Métricas de precisión y reportes detallados
+
+🔸 CASO DE USO 4: Monitoreo y mejora continua
+   • INPUT: Nuevos datasets periódicos
+   • PROCESO: Re-entrenamiento y comparación de métricas
+   • OUTPUT: Evolución de categorías y precisión del sistema
+
+================================================================================
+⚡ OPTIMIZACIONES Y MEJORAS IMPLEMENTADAS
+================================================================================
+
+🔸 MEJORAS EN NOMENCLATURA:
+   • Sistema de nomenclatura semánticamente coherente
+   • Eliminación de nombres genéricos como "Cluster_01"
+   • Incorporación de modificadores contextuales (Crítico, Masivo, etc.)
+   • Validación de unicidad y legibilidad de nombres
+
+🔸 MEJORAS EN ORGANIZACIÓN:
+   • Estructura de carpetas profesional y organizadas
+   • Separación clara entre modelos, datos, reportes y logs
+   • Archivos de salida con timestamps para versionado
+   • Compatibilidad con sistemas de producción
+
+🔸 MEJORAS EN ROBUSTEZ:
+   • Manejo robusto de errores en todas las fases
+   • Validación de datos de entrada
+   • Fallbacks para casos edge
+   • Sistema de logging comprensivo
+
+🔸 MEJORAS EN INTERPRETABILIDAD:
+   • Reportes ejecutivos para diferentes audiencias
+   • Ejemplos representativos con IDs reales
+   • Explicaciones técnicas detalladas
+   • Métricas de confianza por clasificación
+
+================================================================================
+📋 CONCLUSIONES Y RECOMENDACIONES
+================================================================================
+
+🔸 FORTALEZAS DEL SISTEMA:
+   ✅ Alta precisión (92.59%) en clasificación automática
+   ✅ Nomenclatura semánticamente coherente y profesional
+   ✅ Estructura modular y extensible
+   ✅ Manejo robusto de casos edge y errores
+   ✅ Reportes completos para diferentes audiencias
+   ✅ Sistema de reglas semánticas para casos específicos
+
+🔸 ÁREAS DE MEJORA FUTURAS:
+   🔄 Incorporación de modelos de NLP más avanzados (BERT, transformers)
+   🔄 Sistema de feedback para mejora continua
+   🔄 Integración con APIs externas para enriquecimiento de datos
+   🔄 Dashboard web para monitoreo en tiempo real
+   🔄 Sistema de alertas automáticas para categorías críticas
+
+🔸 RECOMENDACIONES OPERATIVAS:
+   📊 Ejecutar re-entrenamiento mensual con nuevos datos
+   📊 Monitorear métricas de confianza y derivar casos de baja confianza
+   📊 Implementar feedback loop con clasificadores humanos
+   📊 Priorizar atención a categorías de alta criticidad identificadas
+   📊 Desarrollar procedimientos específicos por categoría
+
+================================================================================
+📞 INFORMACIÓN TÉCNICA ADICIONAL
+================================================================================
+
+Sistema desarrollado como parte del proyecto de automatización de clasificación
+de incidencias técnicas para Naturgy Delta. 
+
+Versión: Refactorizada y optimizada
+Fecha: Octubre 2025
+Lenguaje: Python 3.x
+Dependencias principales: pandas, scikit-learn, numpy, nltk (opcional)
+
+Para soporte técnico o extensiones del sistema, consultar la documentación
+adicional en la carpeta docs/ o contactar al equipo de desarrollo.
+
+================================================================================
+FIN DEL DOCUMENTO - FLUJO DE DATOS COMPLETO
+================================================================================
