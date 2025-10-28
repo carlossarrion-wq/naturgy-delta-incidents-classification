@@ -63,7 +63,7 @@ pip install nltk
 ### 1. Análisis Completo Estándar
 
 ```bash
-python src/naturgy_classifier_refactored.py infomation.xlsx
+python3 src/naturgy_classifier_refactored.py infomation.xlsx
 ```
 
 Este comando:
@@ -74,7 +74,7 @@ Este comando:
 ### 2. Análisis con Casos de Prueba para Validación
 
 ```bash
-python src/test_classifier.py infomation.xlsx
+python3 src/test_classifier.py infomation.xlsx
 ```
 
 Este comando:
@@ -87,7 +87,11 @@ Este comando:
 ### 3. Análisis Personalizado con Nombre
 
 ```bash
-python src/naturgy_classifier_refactored.py infomation.xlsx mi_analisis_$(date +%Y_%m_%d)
+# Opción 1: Con fecha automática (Linux/macOS)
+python3 src/naturgy_classifier_refactored.py infomation.xlsx mi_analisis_$(date +%Y_%m_%d)
+
+# Opción 2: Con nombre personalizado (todas las plataformas)
+python3 src/naturgy_classifier_refactored.py infomation.xlsx mi_analisis_custom
 ```
 
 ## 📊 Sistema de Clasificación
@@ -272,10 +276,10 @@ class RemedyIntegration:
 
 ```bash
 # Generar 100 casos de prueba
-python src/test_classifier.py infomation.xlsx 100
+python3 src/test_classifier.py infomation.xlsx 100
 
 # Generar casos personalizados
-python src/test_classifier.py infomation.xlsx 50
+python3 src/test_classifier.py infomation.xlsx 50
 ```
 
 ### Métricas de los Casos de Prueba
@@ -311,13 +315,16 @@ python src/test_classifier.py infomation.xlsx 50
 
 ```bash
 # 1. Análisis completo estándar
-python src/naturgy_classifier_refactored.py infomation.xlsx
+python3 src/naturgy_classifier_refactored.py infomation.xlsx
 
 # 2. Análisis con casos de prueba para validación  
-python src/test_classifier.py infomation.xlsx
+python3 src/test_classifier.py infomation.xlsx
 
-# 3. Análisis personalizado con fecha
-python src/naturgy_classifier_refactored.py infomation.xlsx analisis_$(date +%Y_%m_%d)
+# 3. Análisis personalizado con nombre
+python3 src/naturgy_classifier_refactored.py infomation.xlsx analisis_custom
+
+# 4. Prueba de corrección de CUPS (nuevo)
+python3 src/test_cups_correction.py
 ```
 
 ---
