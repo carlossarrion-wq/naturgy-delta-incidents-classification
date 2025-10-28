@@ -607,12 +607,28 @@ class NaturgyIncidentClassifier:
         # Clasificar
         prediction = self.classifier.predict(processed_df)
         
+        # Control de confianza para modelo predictivo - Si confianza < 0.70, clasificar como "sin determinar"
+        confidence = prediction[1] if len(prediction) > 1 else 0.0
+        if confidence < 0.70:
+            return {
+                'predicted_type': 'sin_determinar',
+                'confidence': confidence,
+                'type_info': {
+                    'nombre': 'Sin determinar',
+                    'descripcion': f'Confianza del modelo predictivo ({confidence:.2f}) insuficiente para clasificación automática. Requiere revisión manual.',
+                    'palabras_clave': ['baja confianza', 'modelo predictivo'],
+                    'nivel_criticidad': 'No evaluada'
+                },
+                'extracted_entities': processed_df['entities'].iloc[0] if 'entities' in processed_df.columns else {},
+                'processed_text': processed_df['combined_text'].iloc[0] if 'combined_text' in processed_df.columns else ''
+            }
+        
         # Obtener información del tipo
         incident_type = self.incident_types.get(prediction[0], {})
         
         return {
             'predicted_type': prediction[0],
-            'confidence': prediction[1] if len(prediction) > 1 else 0.0,
+            'confidence': confidence,
             'type_info': incident_type,
             'extracted_entities': processed_df['entities'].iloc[0] if 'entities' in processed_df.columns else {},
             'processed_text': processed_df['combined_text'].iloc[0] if 'combined_text' in processed_df.columns else ''
@@ -1065,8 +1081,8 @@ class NaturgyIncidentClassifier:
             # Calcular confianza basada en número de coincidencias
             confidence = min(0.95, 0.70 + (best_score * 0.05))
             
-            # 🎯 CONTROL DE CONFIANZA MÍNIMA - Si confianza < 0.76, categorizar como "Sin determinar"
-            if confidence < 0.76:
+            # 🎯 CONTROL DE CONFIANZA MÍNIMA - Si confianza < 0.70, categorizar como "Sin determinar"
+            if confidence < 0.70:
                 return {
                     'predicted_type': 'sin_determinar',
                     'confidence': confidence,
@@ -1155,15 +1171,33 @@ class TextPreprocessor:
         return df_processed
     
     def _combine_text_columns(self, df: pd.DataFrame) -> pd.Series:
-        """Combina columnas de texto relevantes"""
+        """Combina columnas de texto relevantes - MEJORADO: Incluye Notas con mayor peso"""
+        # Orden de prioridad: Resumen tiene mayor peso, seguido de Notas
         text_columns = ['Resumen', 'Notas', 'Tipo de ticket', 'Resolución']
         combined = []
         
         for _, row in df.iterrows():
             text_parts = []
-            for col in text_columns:
+            
+            # Resumen: incluir siempre si existe (mayor peso)
+            if 'Resumen' in df.columns and pd.notna(row['Resumen']):
+                resumen = str(row['Resumen']).strip()
+                if resumen:
+                    text_parts.append(resumen)
+            
+            # Notas: incluir con peso importante (segunda prioridad)
+            if 'Notas' in df.columns and pd.notna(row['Notas']):
+                notas = str(row['Notas']).strip()
+                if notas and notas.lower() not in ['nan', '', 'null']:
+                    text_parts.append(notas)
+            
+            # Otras columnas con menor peso
+            for col in ['Tipo de ticket', 'Resolución']:
                 if col in df.columns and pd.notna(row[col]):
-                    text_parts.append(str(row[col]))
+                    text_value = str(row[col]).strip()
+                    if text_value and text_value.lower() not in ['nan', '', 'null']:
+                        text_parts.append(text_value)
+            
             combined.append(' '.join(text_parts))
         
         return pd.Series(combined)

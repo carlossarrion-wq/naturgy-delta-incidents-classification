@@ -1,28 +1,38 @@
 # 🚀 Sistema de Clasificación Automática de Incidencias Naturgy Delta
 
-Sistema híbrido de clasificación automática que combina **reglas semánticas** con **modelos predictivos** para categorizar incidencias del sistema Delta de Naturgy con alta precisión y eficiencia.
+Sistema híbrido avanzado de clasificación automática que combina **reglas semánticas** con **modelos predictivos** para categorizar incidencias del sistema Delta de Naturgy con alta precisión y control de calidad.
+
+## ✨ **NUEVAS MEJORAS IMPLEMENTADAS**
+
+### **🎯 Control de Confianza Mejorado**
+- **Umbral refinado:** Casos con confianza < 0.70 se clasifican automáticamente como "sin determinar"
+- **Control dual:** Aplicado tanto en reglas semánticas como en modelo predictivo
+- **Mayor precisión:** Reducción de falsos positivos en clasificación automática
+
+### **📝 Análisis Enriquecido con Notas**
+- **Contexto ampliado:** Incluye tanto resumen como notas del ticket
+- **Mejor clasificación:** Mayor contexto para decisiones más precisas
+- **Priorización inteligente:** Resumen (mayor peso) → Notas (segunda prioridad)
+
+### **📊 Generación de Excel Completo**
+- **Archivo integrado:** Datos originales + clasificaciones en un solo Excel
+- **5 hojas especializadas:** Análisis completo, resumen por categorías, casos a revisar
+- **Trazabilidad total:** Relación directa entre datos originales y clasificaciones
 
 ## 📊 Resultados Principales
 
-### **🎯 Rendimiento del Sistema**
-- **✅ 100% de automatización:** Todas las 10,071 incidencias clasificadas automáticamente
-- **⚡ 95.6% procesadas por reglas semánticas:** Máxima eficiencia y velocidad
-- **🤖 4.4% procesadas por modelo predictivo:** Respaldo robusto para casos complejos
-- **📈 99.2% con confianza adecuada:** Solo 0.8% con confianza muy baja
+### **🎯 Rendimiento del Sistema (Actualizado)**
+- **✅ 100% de automatización:** Todas las incidencias procesadas sin errores
+- **🎯 Control de calidad:** Solo casos con confianza ≥ 0.70 clasificados automáticamente
+- **⚠️ Revisión inteligente:** Casos < 0.70 marcados para revisión manual
+- **📈 Análisis enriquecido:** Combinación de resumen + notas para mayor precisión
 
-### **📋 Distribución de Clasificación**
-| Método | Casos | % del Total | Descripción |
-|--------|-------|-------------|-------------|
-| **🎯 Reglas semánticas exitosas** | 5,583 | **55.4%** | Clasificadas directamente con alta confianza |
-| **⚠️ Sin determinar** | 4,043 | **40.1%** | Procesadas por reglas pero baja confianza |
-| **🤖 Modelo predictivo** | 445 | **4.4%** | Clasificadas por modelo ML |
-
-### **🏆 Categorías Más Frecuentes**
-1. **Errores de cálculo/facturación:** 2,911 casos (28.9%)
-2. **Batch/Procesos automáticos:** 1,139 casos (11.3%)
-3. **Direcciones y datos de cliente:** 218 casos (2.2%)
-4. **Montaje/Desmontaje/Equipos de medida:** 215 casos (2.1%)
-5. **Cambio de titularidad:** 169 casos (1.7%)
+### **🏆 Categorías Más Identificadas**
+1. **Errores de cálculo/facturación:** ~44% de casos de prueba
+2. **Gestión de CUPS:** ~28% de casos de prueba  
+3. **Batch/Procesos automáticos:** ~10% de casos de prueba
+4. **Lecturas y mediciones:** ~4% de casos de prueba
+5. **Gestiones internas administrativas:** ~3% de casos de prueba
 
 ---
 
@@ -66,30 +76,72 @@ Sistema híbrido de clasificación automática que combina **reglas semánticas*
 ### **📋 Requisitos**
 ```bash
 # Dependencias Python
-pandas
-scikit-learn
-numpy
-matplotlib
-seaborn
-openpyxl
+pip install pandas scikit-learn numpy matplotlib seaborn openpyxl
 ```
 
-### **⚡ Análisis Completo de Todas las Incidencias**
-```bash
-# Ejecutar clasificación completa (mismo proceso que casos de prueba)
-python3 full_classification_stats.py infomation.xlsx
+### **🎯 Sistema Original (Recomendado) - Con Control de Confianza Mejorado**
 
-# Genera:
-# - estadisticas_clasificacion_completa.txt (estadísticas detalladas)
-# - resumen_final_clasificacion_naturgy.md (análisis completo)
+#### **⚡ Análisis Completo de Todas las Incidencias**
+```bash
+cd sistema_original
+
+# Entrenar y analizar todas las 10,071 incidencias
+python3 naturgy_classifier_refactored.py ../data/infomation.xlsx
+
+# Genera en outputs/:
+# - models/ (modelos entrenados)
+# - data/ (análisis JSON completo)
+# - reports/ (reportes detallados con categorías y porcentajes)
 ```
 
-### **🧪 Casos de Prueba Específicos**
+#### **🧪 Test de 100 Casos de Prueba**
 ```bash
-# Generar casos de prueba (máximo disponible)
-python3 src/test_classifier.py infomation.xlsx 100
+cd sistema_original
 
-# Resultados en casos_prueba/reports/
+# Generar 100 casos de prueba con nuevo umbral de confianza
+python3 test_classifier.py ../data/infomation.xlsx 100
+
+# Genera en casos_prueba/:
+# - data/casos_prueba_resultados.json (resultados detallados)
+# - reports/casos_prueba_detallado.txt (reporte completo)
+# - reports/incertidumbre.txt (casos que requieren revisión)
+```
+
+#### **📊 Generar Excel Completo con Resultados**
+```bash
+cd sistema_original
+
+# Combinar datos originales con clasificaciones en Excel
+python3 generar_excel_resultados.py casos_prueba/data/casos_prueba_original.xlsx casos_prueba/data/casos_prueba_resultados.json resultados_clasificacion_naturgy.xlsx
+
+# Genera Excel con 5 hojas:
+# - Todos_los_Casos: Datos completos + clasificaciones
+# - Resumen_por_Categorias: Estadísticas por categoría
+# - Casos_Requieren_Revision: Confianza ≤ 0.75
+# - Sin_Determinar: Confianza < 0.70
+# - Estadisticas_Generales: Métricas del análisis
+```
+
+### **🔬 Sistema ML Enhanced (Experimental)**
+```bash
+cd sistema_ml_enhanced
+
+# Análisis con modelo ML avanzado
+python3 naturgy_classifier_ml_enhanced.py ../data/infomation.xlsx
+
+# Test de 100 casos con ML Enhanced
+python3 test_ml_enhanced_100_cases.py ../data/infomation.xlsx 100
+```
+
+### **📈 Herramientas de Análisis Adicionales**
+```bash
+cd herramientas
+
+# Estadísticas completas del clasificador
+python3 full_classification_stats.py ../data/infomation.xlsx
+
+# Mejorar nombres de categorías (si es necesario)
+python3 improve_category_names.py
 ```
 
 ---
