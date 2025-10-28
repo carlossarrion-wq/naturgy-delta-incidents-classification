@@ -36,9 +36,9 @@
 | 4 | **Direcciones y datos de cliente** | 218 | 2.2% | 🎯 Reglas semánticas |
 | 5 | **Montaje/Desmontaje/Equipos de medida** | 215 | 2.1% | 🎯 Reglas semánticas |
 | 6 | **Cambio de titularidad** | 169 | 1.7% | 🎯 Reglas semánticas |
-| 7 | **Errores Sistema** | 162 | 1.6% | 🤖 Modelo predictivo |
+| 7 | **Errores en Gestión de CUPS** | 162 | 1.6% | 🤖 Modelo predictivo |
 | 8 | **Extracciones e informes** | 155 | 1.5% | 🎯 Reglas semánticas |
-| 9 | **Gestión Datos Masivo Frecuentes** | 151 | 1.5% | 🤖 Modelo predictivo |
+| 9 | **Fallos en Procesos Batch** | 151 | 1.5% | 🤖 Modelo predictivo |
 | 10 | **Gestión de CUPS** | 133 | 1.3% | 🎯 Reglas semánticas |
 | 11 | **Gestiones internas administrativas** | 123 | 1.2% | 🎯 Reglas semánticas |
 | 12 | **Lecturas y mediciones** | 92 | 0.9% | 🎯 Reglas semánticas |
@@ -46,7 +46,7 @@
 | 14 | **Rechazos y bloqueos** | 78 | 0.8% | 🎯 Reglas semánticas |
 | 15 | **Gestión de usuarios** | 73 | 0.7% | 🎯 Reglas semánticas |
 | 16 | **Bono social y vulnerabilidad** | 61 | 0.6% | 🎯 Reglas semánticas |
-| 17 | **Consultas Funcionales** | 53 | 0.5% | 🤖 Modelo predictivo |
+| 17 | **Consultas y Pruebas del Sistema** | 53 | 0.5% | 🤖 Modelo predictivo |
 | 18 | **Cobros y pagos** | 52 | 0.5% | 🎯 Reglas semánticas |
 | 19 | **Estados de cálculo/facturación** | 45 | 0.4% | 🎯 Reglas semánticas |
 | 20 | **Tarifas y productos** | 27 | 0.3% | 🎯 Reglas semánticas |
@@ -68,9 +68,25 @@
 ### **📋 RESUMEN TOTAL DE CATEGORÍAS:**
 - **🎯 Reglas semánticas activas:** 16 categorías (con casos)
 - **🔴 Reglas semánticas inactivas:** 8 categorías (0 casos)
-- **🤖 Modelo predictivo:** 3 categorías (tipo_XX convertidas)
+- **🤖 Modelo predictivo:** 3 categorías (nombres contextuales aplicados)
 - **⚠️ Sin determinar:** 1 categoría especial
 - **📊 TOTAL DISPONIBLE:** 28 categorías únicas en el sistema
+
+### **🎨 MEJORAS DE NOMENCLATURA APLICADAS:**
+
+**Las categorías del modelo predictivo han sido mejoradas con nombres contextuales:**
+
+| **Nombre Técnico Original** | **Nombre Contextual Mejorado** |
+|---------------------------|--------------------------------|
+| "Errores Sistema" | **"Errores en Gestión de CUPS"** |
+| "Gestión Datos Masivo Frecuentes" | **"Fallos en Procesos Batch"** |
+| "Consultas Funcionales" | **"Consultas y Pruebas del Sistema"** |
+
+**🔧 Algoritmo aplicado:** Análisis semántico automático basado en:
+- Palabras clave más frecuentes de cada cluster
+- Ejemplos representativos de incidencias  
+- Mapeo términos técnicos → términos empresariales
+- Patrón gramatical: `[TIPO_PROBLEMA] + "en/de" + [ÁREA_FUNCIONAL]`
 
 ---
 

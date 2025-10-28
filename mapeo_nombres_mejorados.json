@@ -1,0 +1,19 @@
+{
+  "Errores Sistema": "Errores en Gestión de CUPS",
+  "Errores Sistema Critico Frecuentes": "Errores en Gestión de CUPS",
+  "Gestión Datos Masivo Frecuentes": "Fallos en Procesos Batch",
+  "Procesos Batch Masivo Frecuentes": "Fallos en Procesos Batch",
+  "Facturación Critico Frecuentes": "Problemas Críticos de Facturación",
+  "Gestión Contratos Critico Frecuentes": "Problemas Críticos de Contratos",
+  "Facturación": "Consultas de Facturación",
+  "Gestión Contratos Automatico Frecuentes": "Errores en Gestión de Contratos",
+  "Gestión Datos Frecuentes": "Solicitudes de Datos Regulatorios",
+  "Gestión Contratos Frecuentes": "Gestión de Contratos",
+  "Infraestructura Frecuentes": "Solicitudes de Infraestructura",
+  "Errores Sistema Manual Frecuentes": "Errores en Gestión de CUPS",
+  "Gestión Datos Automatico Frecuentes": "Fallos en Procesos Batch",
+  "Errores Sistema Critico": "Errores en Gestión de CUPS",
+  "Consultas Funcionales": "Consultas y Pruebas del Sistema",
+  "Infraestructura Critico": "Problemas de Rendimiento del Sistema",
+  "Gestión Contratos Masivo Frecuentes": "Gestión Masiva de Contratos"
+}
