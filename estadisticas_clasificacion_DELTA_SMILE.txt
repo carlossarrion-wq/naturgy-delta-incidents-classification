@@ -1,0 +1,50 @@
+=====================================================================================
+📊 ESTADÍSTICAS REALES - CLASIFICACIÓN COMPLETA DE TODAS LAS INCIDENCIAS
+=====================================================================================
+Fecha: 2025-11-03 16:32:55
+Total procesado: 16,971 incidencias
+Errores: 0
+
+🎯 DISTRIBUCIÓN POR MÉTODO DE CLASIFICACIÓN:
+• Reglas semánticas exitosas: 16,261 casos (95.8%)
+• Modelo predictivo: 547 casos (3.2%)
+• Sin determinar (reglas semánticas): 163 casos (1.0%)
+
+📋 RESUMEN POR MÉTODO:
+• TOTAL procesado por reglas semánticas: 16,424 (96.8%)
+  - Exitosas: 16,261 (95.8%)
+  - Sin determinar: 163 (1.0%)
+• TOTAL que llegó al modelo predictivo: 547 (3.2%)
+
+📊 TOP 20 CATEGORÍAS MÁS FRECUENTES:
+ 1. Errores de cálculo/facturación: 7,871 casos (46.4%)
+ 2. Gestión de CUPS: 5,011 casos (29.5%)
+ 3. Batch/Procesos automáticos: 680 casos (4.0%)
+ 4. Montaje/Desmontaje/Equipos de medida: 604 casos (3.6%)
+ 5. Lecturas y mediciones: 361 casos (2.1%)
+ 6. Gestión de usuarios: 327 casos (1.9%)
+ 7. Cambio de titularidad: 231 casos (1.4%)
+ 8. Direcciones y datos de cliente: 224 casos (1.3%)
+ 9. Bono social y vulnerabilidad: 208 casos (1.2%)
+10. Extracciones e informes: 202 casos (1.2%)
+11. tipo_14: 185 casos (1.1%)
+12. Sin determinar: 163 casos (1.0%)
+13. Gestiones internas administrativas: 142 casos (0.8%)
+14. tipo_23: 135 casos (0.8%)
+15. Cobros y pagos: 133 casos (0.8%)
+16. Estados de cálculo/facturación: 105 casos (0.6%)
+17. Tarifas y productos: 92 casos (0.5%)
+18. Gestión de contratos: 85 casos (0.5%)
+19. tipo_07: 61 casos (0.4%)
+20. tipo_03: 31 casos (0.2%)
+
+⚡ DISTRIBUCIÓN POR CRITICIDAD:
+• Alta: 9,193 casos (54.2%)
+• Media: 6,787 casos (40.0%)
+• No evaluada: 605 casos (3.6%)
+• Baja: 386 casos (2.3%)
+
+📈 DISTRIBUCIÓN POR NIVEL DE CONFIANZA:
+• Media confianza (0.6-0.8): 13,780 casos (81.2%)
+• Alta confianza (≥0.8): 3,100 casos (18.3%)
+• Baja confianza (<0.6): 91 casos (0.5%)

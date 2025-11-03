@@ -8,12 +8,12 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, date
 from collections import defaultdict
 from pathlib import Path
 
-# Agregar el directorio src al path
-sys.path.append('src')
+# Agregar el directorio sistema_original al path
+sys.path.append('sistema_original')
 
 # Importar el clasificador
 try:
@@ -46,7 +46,7 @@ def train_classifier_for_rules(data_path):
         print(f"❌ Error entrenando clasificador: {e}")
         return None
 
-def classify_all_and_count(data_path):
+def classify_all_and_count(data_path, nombre_prod_filter=None, fecha_desde=None, suffix=""):
     """Clasifica todas las incidencias y cuenta por categoría"""
     
     # Entrenar clasificador para tener reglas semánticas
@@ -62,6 +62,16 @@ def classify_all_and_count(data_path):
     except Exception as e:
         print(f"❌ Error cargando datos: {e}")
         return None
+    
+    # Aplicar filtros
+    if nombre_prod_filter:
+        df = df[df['Nombre Prod.'] == nombre_prod_filter].copy()
+        print(f"🔍 Filtrado por Nombre Prod. = '{nombre_prod_filter}': {len(df)} registros")
+    
+    if fecha_desde:
+        df['Fecha Creacion'] = pd.to_datetime(df['Fecha Creacion'])
+        df = df[df['Fecha Creacion'] >= fecha_desde].copy()
+        print(f"📅 Filtrado desde {fecha_desde}: {len(df)} registros")
     
     # Filtrar registros válidos
     df_valid = df[df['Resumen'].notna() & (df['Resumen'] != '')].copy()
@@ -260,25 +270,66 @@ def main():
         print(f"❌ No se encuentra el archivo: {data_path}")
         sys.exit(1)
     
-    print("🚀 INICIANDO CLASIFICACIÓN COMPLETA DE TODAS LAS INCIDENCIAS")
+    print("🚀 INICIANDO CLASIFICACIÓN COMPLETA CON MÚLTIPLES FILTROS")
     print("🔄 Proceso: Reglas semánticas → Modelo predictivo (igual que test_classifier)")
+    print("📊 Se generarán 3 reportes: General, DELTA SMILE, DELTA SMILE desde 2024")
     print("=" * 70)
     
-    # Clasificar todas las incidencias
-    stats = classify_all_and_count(data_path)
+    reportes_generados = []
     
-    if not stats:
-        print("❌ No se pudieron obtener estadísticas")
-        sys.exit(1)
+    # 1. REPORTE GENERAL (sin filtros)
+    print("\n" + "="*50)
+    print("📊 REPORTE 1: TODAS LAS INCIDENCIAS")
+    print("="*50)
     
-    # Generar reporte final
-    report_file = generate_final_report(stats)
+    stats_general = classify_all_and_count(data_path)
+    if stats_general:
+        report_file = generate_final_report(stats_general, 'estadisticas_clasificacion_completa.txt')
+        if report_file:
+            reportes_generados.append(report_file)
+            print(f"✅ Reporte general guardado: {report_file}")
     
-    if report_file:
-        print(f"\n✅ PROCESO COMPLETADO EXITOSAMENTE")
-        print(f"📄 Estadísticas finales guardadas en: {report_file}")
+    # 2. REPORTE DELTA SMILE (solo Nombre Prod. = DELTA SMILE)
+    print("\n" + "="*50)
+    print("📊 REPORTE 2: SOLO DELTA SMILE")
+    print("="*50)
+    
+    stats_delta = classify_all_and_count(data_path, nombre_prod_filter="DELTA SMILE")
+    if stats_delta:
+        report_file = generate_final_report(stats_delta, 'estadisticas_clasificacion_DELTA_SMILE.txt')
+        if report_file:
+            reportes_generados.append(report_file)
+            print(f"✅ Reporte DELTA SMILE guardado: {report_file}")
+    
+    # 3. REPORTE DELTA SMILE DESDE 2024 (Nombre Prod. = DELTA SMILE Y fecha >= 2024-01-01)
+    print("\n" + "="*50)
+    print("📊 REPORTE 3: DELTA SMILE DESDE ENERO 2024")
+    print("="*50)
+    
+    fecha_2024 = datetime(2024, 1, 1)
+    stats_delta_2024 = classify_all_and_count(
+        data_path, 
+        nombre_prod_filter="DELTA SMILE", 
+        fecha_desde=fecha_2024
+    )
+    if stats_delta_2024:
+        report_file = generate_final_report(stats_delta_2024, 'estadisticas_clasificacion_DELTA_SMILE_2024.txt')
+        if report_file:
+            reportes_generados.append(report_file)
+            print(f"✅ Reporte DELTA SMILE 2024 guardado: {report_file}")
+    
+    # RESUMEN FINAL
+    print("\n" + "="*70)
+    print("🎉 PROCESO COMPLETADO - TODOS LOS REPORTES GENERADOS")
+    print("="*70)
+    
+    if reportes_generados:
+        print(f"📄 Total de reportes generados: {len(reportes_generados)}")
+        for i, reporte in enumerate(reportes_generados, 1):
+            print(f"   {i}. {reporte}")
+        print("\n✅ TODOS LOS REPORTES DISPONIBLES")
     else:
-        print("❌ No se pudo generar el reporte final")
+        print("❌ No se pudieron generar los reportes")
         sys.exit(1)
 
 if __name__ == "__main__":
